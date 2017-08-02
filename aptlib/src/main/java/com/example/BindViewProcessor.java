@@ -22,6 +22,7 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -29,10 +30,14 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
-
+/**
+ * TODO What does this class to do?
+ *
+ * @author Muyangmin
+ * @since 2.0.0
+ */
 @AutoService(Processor.class)
 public class BindViewProcessor extends AbstractProcessor {
-
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Collections.singleton(BindView.class.getCanonicalName());
@@ -49,6 +54,10 @@ public class BindViewProcessor extends AbstractProcessor {
         filer = processingEnvironment.getFiler();
     }
 
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.RELEASE_7;
+    }
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
@@ -106,65 +115,43 @@ public class BindViewProcessor extends AbstractProcessor {
             if (null == list || list.size() == 0) {
                 continue;
             }
-            //类类型 com.example....MainActivity
             TypeElement typeElement = item.getKey();
-            //获取包名 com.example...
             String packageName = getPackageName(typeElement);
-            //根据包名获取类名 MainActivity
             String className = getClassName(typeElement, packageName);
-            //类型 <T extends MainActivity>
             ClassName name = ClassName.bestGuess(className);
-            //获取我们定义的接口包名 和类名
             ClassName viewBinder = ClassName.get("com.example.injectlibrary", "ViewBinder");
-            //生成java类 MainActivity$$ViewBinder
             TypeSpec.Builder result = TypeSpec.classBuilder(className + "$$ViewBinder")
-                    .addModifiers(Modifier.PUBLIC)//将该类声明为public
-                    .addTypeVariable(TypeVariableName.get("T", name))//声明该类的类型 <T extends MainActivity>
-                    .addSuperinterface(ParameterizedTypeName.get(viewBinder, name));//该类的实现接口 以及接口类型
-            //生成方法
-            MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("bind")//方法名 "bind"与ViewBinder接口中的回调保持一致
-                    .addModifiers(Modifier.PUBLIC)//方法声明为public
-                    .returns(TypeName.VOID)//方法返回值为void
-                    .addAnnotation(Override.class)//方法注解 实现接口方法
-                    .addParameter(name, "target", Modifier.FINAL);//参数类型（MainActivity） 参数名 参数修饰符
-            //遍历该类下声明了@BindView注解的成员变量List集合
+                    .addModifiers(Modifier.PUBLIC)
+                    .addTypeVariable(TypeVariableName.get("T", name))
+                    .addSuperinterface(ParameterizedTypeName.get(viewBinder, name));
+            MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("bind")
+                    .addModifiers(Modifier.PUBLIC, Modifier.PUBLIC)
+                    .returns(TypeName.VOID)
+                    .addAnnotation(Override.class)
+                    .addParameter(name, "target", Modifier.FINAL);
             for (int i = 0; i < list.size(); i++) {
                 FieldViewBinding fieldViewBinding = list.get(i);
-                //成员变量类型信息 --android.text.TextView
                 String packageNameString = fieldViewBinding.getTypeMirror().toString();
-                //得到成员变量的类名---TextView
                 ClassName viewclassName = ClassName.bestGuess(packageNameString);
-                //方法里面添加执行逻辑 $L $T 占位符 参数顺序一定要对 以及“target”一定要与上面的行参保持一致 代表的就是mainActivity
-                //相当于：mainActivity.textview= (TextView) mainActivity.findViewById(R.id.textView);
                 methodBuilder.addStatement("target.$L=($T)target.findViewById($L)", fieldViewBinding.getName(), viewclassName, fieldViewBinding.getResId());
             }
-            result.addMethod(methodBuilder.build());//往类里面添加方法
+            result.addMethod(methodBuilder.build());
             try {
-                //生成Java类信息 包名 类
                 JavaFile.builder(packageName, result.build())
-                        .addFileComment("auto create make")//类注释
+                        .addFileComment("auto create make")
                         .build()
-                        .writeTo(filer);//写出
+                        .writeTo(filer);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
-    /**
-     * 获取类名(通过截取包名获取 若是内部类会将"."替换为"$")
-     * @param typeElement
-     * @param packageName
-     */
+
     private String getClassName(TypeElement typeElement, String packageName) {
         int packageNameLength = packageName.length() + 1;
         return typeElement.getQualifiedName().toString().substring(packageNameLength).replace(".", "$");
     }
 
-    /**
-     * 获取包名
-     * @param enclosingElement
-     * @return
-     */
     private String getPackageName(TypeElement enclosingElement) {
         return elementUtil.getPackageOf(enclosingElement).getQualifiedName().toString();
     }

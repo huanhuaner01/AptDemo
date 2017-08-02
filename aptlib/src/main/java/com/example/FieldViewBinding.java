@@ -7,10 +7,9 @@ import javax.lang.model.type.TypeMirror;
  */
 
 public class FieldViewBinding {
-    private String name; //成员变量名称
-    private TypeMirror typeMirror;//成员变量类型
-    private int resId;//布局中id值
-
+    private String name;
+    private TypeMirror typeMirror;
+    private int resId;
     public FieldViewBinding(String name, TypeMirror typeMirror, int resId) {
         this.name = name;
         this.typeMirror = typeMirror;
