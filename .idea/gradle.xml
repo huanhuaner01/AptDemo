@@ -10,6 +10,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/aptlib" />
+            <option value="$PROJECT_DIR$/inject-anotation" />
+            <option value="$PROJECT_DIR$/viewlib" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

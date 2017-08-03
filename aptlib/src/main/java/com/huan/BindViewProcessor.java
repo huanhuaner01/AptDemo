@@ -1,4 +1,4 @@
-package com.example;
+package com.huan;
 
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
@@ -22,77 +22,67 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 
 /**
- * TODO What does this class to do?
+ * 注解解析器，javac的时候会将相关的注解传入注解解析器进行解析
  *
- * @author Muyangmin
+ * @author huanzhang
  * @since 2.0.0
  */
 @AutoService(Processor.class)
 public class BindViewProcessor extends AbstractProcessor {
+    private Elements elementUtil;
+    private Filer filer;
+    /**
+     * 支持bindview类型的注解
+     * @return
+     */
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Collections.singleton(BindView.class.getCanonicalName());
     }
-    private Elements elementUtil;
-    private Types typesUtil;
-    private Filer filer;
 
+
+    /**
+     * 初始化
+     * @param processingEnvironment
+     */
     @Override
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
         super.init(processingEnvironment);
         elementUtil = processingEnvironment.getElementUtils();
-        typesUtil = processingEnvironment.getTypeUtils();
         filer = processingEnvironment.getFiler();
     }
 
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.RELEASE_7;
-    }
-
+    /**
+     * 处理注解的方法
+     * @param set
+     * @param roundEnvironment
+     * @return
+     */
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
-     /*   Set<? extends Element> elements = roundEnvironment.getElementsAnnotatedWith(BindView.class);
-        for (Element element : elements) {
-            BindView view = element.getAnnotation(BindView.class);
-            int id = view.value();
-
-            MethodSpec main = MethodSpec.methodBuilder("main")
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                    .returns(void.class)
-                    .addParameter(String[].class, "args")
-                    .addStatement("$T.out.println($S)", System.class, "BindView, " + var)
-                    .build();
-            TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
-                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                    .addMethod(main)
-                    .build();
-            JavaFile javaFile = JavaFile.builder("com.soubu.helloworld", helloWorld)
-                    .build();
-            try {
-                javaFile.writeTo(processingEnv.getFiler());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return false;*/
+        //定义一个map,装类名和类相关的组件信息
         Map<TypeElement, List<FieldViewBinding>> targetMap = new HashMap<>();
+
         setElemtBindView(roundEnvironment, targetMap, BindView.class);
         addClassAndMethod(targetMap);
         return false;
     }
 
-
-    private void setElemtBindView(RoundEnvironment roundEnvironment, Map<TypeElement, List<FieldViewBinding>> targetMap, Class<BindView> annotation) {
+    /**
+     * 解析注解，封装到map中，key为类，value是类里面的相关的注解的成员变量及信息
+     * @param roundEnvironment
+     * @param targetMap
+     * @param annotation
+     */
+    private void setElemtBindView(RoundEnvironment roundEnvironment, Map<TypeElement,
+            List<FieldViewBinding>> targetMap, Class<BindView> annotation) {
         for (Element element : roundEnvironment.getElementsAnnotatedWith(annotation)) {
             TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
             List<FieldViewBinding> list = targetMap.get(enclosingElement);
@@ -108,6 +98,10 @@ public class BindViewProcessor extends AbstractProcessor {
         }
     }
 
+    /**
+     * 添加类和方法
+     * @param targetMap
+     */
     private void addClassAndMethod(Map<TypeElement, List<FieldViewBinding>> targetMap) {
         //遍历Map
         for (Map.Entry<TypeElement, List<FieldViewBinding>> item : targetMap.entrySet()) {
@@ -119,7 +113,7 @@ public class BindViewProcessor extends AbstractProcessor {
             String packageName = getPackageName(typeElement);
             String className = getClassName(typeElement, packageName);
             ClassName name = ClassName.bestGuess(className);
-            ClassName viewBinder = ClassName.get("com.example.injectlibrary", "ViewBinder");
+            ClassName viewBinder = ClassName.get("com.study.huanzhang.viewlib", "ViewBinder");
             TypeSpec.Builder result = TypeSpec.classBuilder(className + "$$ViewBinder")
                     .addModifiers(Modifier.PUBLIC)
                     .addTypeVariable(TypeVariableName.get("T", name))
@@ -133,7 +127,8 @@ public class BindViewProcessor extends AbstractProcessor {
                 FieldViewBinding fieldViewBinding = list.get(i);
                 String packageNameString = fieldViewBinding.getTypeMirror().toString();
                 ClassName viewclassName = ClassName.bestGuess(packageNameString);
-                methodBuilder.addStatement("target.$L=($T)target.findViewById($L)", fieldViewBinding.getName(), viewclassName, fieldViewBinding.getResId());
+                methodBuilder.addStatement("target.$L=($T)target.findViewById($L)",
+                        fieldViewBinding.getName(), viewclassName, fieldViewBinding.getResId());
             }
             result.addMethod(methodBuilder.build());
             try {
