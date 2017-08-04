@@ -4,8 +4,8 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/AptDemo.iml" filepath="$PROJECT_DIR$/AptDemo.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/aptlib/aptlib.iml" filepath="$PROJECT_DIR$/aptlib/aptlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/inject-anotation/inject-anotation.iml" filepath="$PROJECT_DIR$/inject-anotation/inject-anotation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/processorlib/processorlib.iml" filepath="$PROJECT_DIR$/processorlib/processorlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/viewlib/viewlib.iml" filepath="$PROJECT_DIR$/viewlib/viewlib.iml" />
     </modules>
   </component>

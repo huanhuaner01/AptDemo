@@ -1,1 +1,1 @@
-include ':app', ':aptlib', ':viewlib', ':inject-anotation'
+include ':app', ':processorlib', ':viewlib', ':inject-anotation'
